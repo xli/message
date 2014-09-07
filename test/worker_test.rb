@@ -55,4 +55,10 @@ class WorkerTest < Minitest::Test
       Task.enq.plus(3) { 4 }
     end
   end
+
+  def test_should_raise_no_method_error_when_enqueue_with_unknown_method_call
+    assert_raises NoMethodError do
+      Task.enq.multiply(3)
+    end
+  end
 end

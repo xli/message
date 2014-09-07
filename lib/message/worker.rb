@@ -14,6 +14,9 @@ module Message
           if block_given?
             raise ArgumentError, "Can't enqueue with block call."
           end
+          unless @obj.respond_to?(m)
+            @obj.send(m, *args)
+          end
           Message.worker.job << YAML.dump([@obj, m, args])
         end
       end
