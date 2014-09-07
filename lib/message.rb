@@ -1,5 +1,6 @@
 require 'message/q'
 require 'message/job'
+require 'message/worker'
 
 module Message
   module_function
@@ -18,4 +19,10 @@ module Message
       Job
     end
   end
+
+  def worker
+    Worker.new
+  end
 end
+
+Object.send(:include, Message::Worker::SyntaxSugar)

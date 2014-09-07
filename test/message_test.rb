@@ -1,8 +1,6 @@
-require "minitest/autorun"
+require "test_helper"
 
-require "message"
-
-class TestMessage < Minitest::Test
+class MessageTest < Minitest::Test
   class NewQueue
     def initialize(name)
       @name = name
