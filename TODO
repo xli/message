@@ -1,6 +1,8 @@
 * Ruby 1.8 support
 * JRuby support: use thread safe hash for worker jobs
 * Worker:
-  * retry on failure
-  * timeout
   * better logging
+* timeout:
+  * enq, deq, process
+* retry on failure
+  * enq, deq, process
