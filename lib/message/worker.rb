@@ -4,7 +4,7 @@ module Message
   class Worker
     DEFAULT_JOB_NAME = 'message-worker-default'
 
-    module Sugar
+    module Enqueue
       class Enq
         def initialize(obj, job)
           @obj = obj
@@ -18,7 +18,7 @@ module Message
           unless @obj.respond_to?(m)
             raise NoMethodError, "undefined method `#{m}' for #{@obj.inspect}"
           end
-          Message.worker << [@job, [@obj, m, args]]
+          Worker.enq(@job, [@obj, m, args])
         end
       end
 
@@ -30,6 +30,10 @@ module Message
     class << self
       def jobs
         @jobs ||= Hash.new{|h,k| h[k] = Message.job(k, &job_processor)}
+      end
+
+      def enq(name, work)
+        jobs[name].enq(YAML.dump(work))
       end
 
       def job_processor
@@ -49,11 +53,7 @@ module Message
         begin
           log(:info) { "start" }
           loop do
-            log(:info) { "processing #{size} jobs" }
-            s =  Benchmark.realtime do
-              process(size)
-            end
-            log(:info) { "processed in #{(1000 * s).to_i}s" }
+            process(size)
             sleep interval
           end
           log(:info) { "stopped" }
@@ -64,21 +64,12 @@ module Message
     end
 
     def process(size=1)
-      job(@job_name).process(size)
-    end
-
-    def <<(work)
-      name, rest = work
-      job(name).enq(YAML.dump(rest))
+      Worker.jobs[@job_name].process(size)
     end
 
     private
     def log(level, &block)
       Message.logger.send(level) { "[Worker(#{Thread.current.object_id})] #{block.call}" }
-    end
-
-    def job(name)
-      Worker.jobs[name]
     end
   end
 end

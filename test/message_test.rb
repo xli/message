@@ -126,7 +126,7 @@ class MessageTest < Minitest::Test
   end
 
   def enq_filter(prepend, log=[])
-    lambda do |filter|
+    lambda do |filter, job|
       lambda do |msg|
         log << prepend
         filter.call("#{prepend} #{msg}")
@@ -135,7 +135,7 @@ class MessageTest < Minitest::Test
   end
 
   def process_filter(append, log=[])
-    lambda do |filter|
+    lambda do |filter, job|
       lambda do |size, &processor|
         log << append
         filter.call(size) do |msg|

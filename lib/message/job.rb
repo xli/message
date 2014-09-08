@@ -39,7 +39,7 @@ module Message
     private
     def chain(type, base)
       Job.filters[type].reverse.inject(base) do |m, f|
-        f[1].call(m)
+        f[1].call(m, self)
       end
     end
   end

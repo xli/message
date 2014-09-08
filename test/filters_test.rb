@@ -26,23 +26,23 @@ class FiltersTest < Minitest::Test
     job = Message.job('name') {|msg| count += msg}
     job << 1
     job.process(2)
-    assert_logged("one message in")
+    assert_logged("processed in")
   end
 
   def test_error_handling
     count = 1
-    job = Message.job('name') {|msg| count += msg}
+    job = Message.job('count') {|msg| count += msg}
     job << '1'
     job << 1
     job.process(2)
     assert_equal 0, job.size
     assert_equal 1+1, count
-    assert_logged("Process message error")
+    assert_logged("Process count message failed")
   end
 
   def assert_logged(msg)
     m = Message.logger.log.find do |l|
-      l =~ /#{msg}/
+      l =~ /#{msg}/i
     end
     assert m, "Could not find log has message: #{msg.inspect}"
   end

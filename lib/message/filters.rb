@@ -16,28 +16,29 @@ module Message
       end
     end
 
-    def error_handling(filter)
+    def error_handling(filter, job)
       lambda do |size, &processor|
         filter.call(size) do |msg|
           begin
             processor.call(msg)
           rescue => e
             Message.logger.error {
-              "Process message error #{e.message}:\n#{e.backtrace.join("\n")}"
+              "Process #{job.name} message failed, #{e.class}: #{e.message}\n#{e.backtrace.join("\n")}"
             }
           end
         end
       end
     end
 
-    def benchmarking(filter)
+    def benchmarking(filter, job)
       lambda do |size, &processor|
         filter.call(size) do |msg|
           ret = nil
+          Message.logger.info { "#{job.name}: processing one message"}
           s = Benchmark.realtime do
             ret = processor.call(msg)
           end
-          Message.logger.info { "Processed one message in #{(1000 * s).to_i}ms" }
+          Message.logger.info { "#{job.name}: processed in #{(1000 * s).to_i}ms" }
           ret
         end
       end

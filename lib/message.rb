@@ -43,4 +43,4 @@ module Message
   reset
 end
 
-Object.send(:include, Message::Worker::Sugar)
+Object.send(:include, Message::Worker::Enqueue)
