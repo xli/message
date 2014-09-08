@@ -10,6 +10,12 @@ Also, Message provides an in-memory queue for making development and test easier
 
 ### Enqueue background job
 
+Change from:
+
+    WelcomeMailer.deliver(user)
+
+To:
+
     WelcomeMailer.enq.deliver(user)
 
 ### Start worker to process jobs
@@ -20,17 +26,31 @@ Also, Message provides an in-memory queue for making development and test easier
 
 Job = a queue + message processor
 
-### enq(work), alias: <<
+### initialize a job
 
-Queue up a new work
+    job = Message.job('name') { |msg| ... process msg ... }
+
+### enq(msg), alias: <<
+
+Queue up a message for processing:
+
+    job << msg
 
 ### process(size=1)
 
-Process a work in queue by processor
+Process a message in queue by processor defined when initializing the job
+
+    job.process
+
+Process multiple messages
+
+    job.process(5)
 
 ## Job filters
 
-    Message.job.filter(filter_name) do |next_filter|
+You can add job filter to add additional functions to enqueue and process job message
+
+    Message.job.filter(filter_name) do |next_filter, job|
       lambda do |*args, &block|
         next_filter.call(*args, &block)
       end
@@ -41,18 +61,18 @@ Checkout all filters:
 
     Message.job.filters
 
-### add work filter
+### enq filter
 
-    Message.job.filter(:add) do |filter|
+    Message.job.filter(:enq) do |filter, job|
       lambda do |work|
         filter.call(work)
       end
     end
 
-### process work filter
+### process filter
 
 
-    Message.job.filter(:process) do |filter|
+    Message.job.filter(:process) do |filter, job|
       lambda do |size, &processor|
         filter.call(size) do |msg|
           processor.call(msg)
@@ -62,17 +82,19 @@ Checkout all filters:
 
 ## Queue adapters
 
-Change queue adapter to change different queue implementation. Default is a in memory queue for testing and development environment.
-
-### Add a new adapter
-
-    Message.queue.adapters[:sqs] = Message::SqsQueue
+Change queue adapter to change different queue implementation. Default is a in memory queue for testing and development environments.
 
 ### Change adapter
 
     Message.queue.adapter = :sqs
 
+### Add a new adapter
+
+    Message.queue.adapters[:sqs] = Message::SqsQueue
+
 ## Queue interface specification
+
+To hook up a new queue into Message.
 
 ### name
 
@@ -80,11 +102,11 @@ Queue name.
 
 ### enq(msg), alias: <<
 
-Enqueue message.
+Enqueue message, non-blocking.
 
 ### deq(size, &block)
 
-Dequeue message, non-blocking.
+Dequeue message, non-blocking. Should remove message from queue.
 
 ### size
 
