@@ -44,6 +44,25 @@ module Message
       @job_name = job_name || DEFAULT_JOB_NAME
     end
 
+    def start(size=10, interval=1)
+      Thread.start do
+        begin
+          log(:info) { "start" }
+          loop do
+            log(:info) { "processing #{size} jobs" }
+            s =  Benchmark.realtime do
+              process(size)
+            end
+            log(:info) { "processed in #{(1000 * s).to_i}s" }
+            sleep interval
+          end
+          log(:info) { "stopped" }
+        rescue => e
+          log(:error) { "crashed: #{e.message}\n#{e.backtrace.join("\n")}"}
+        end
+      end
+    end
+
     def process(size=1)
       job(@job_name).process(size)
     end
@@ -54,6 +73,10 @@ module Message
     end
 
     private
+    def log(level, &block)
+      Message.logger.send(level) { "[Worker(#{Thread.current.object_id})] #{block.call}" }
+    end
+
     def job(name)
       Worker.jobs[name]
     end

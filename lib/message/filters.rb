@@ -34,10 +34,10 @@ module Message
       lambda do |size, &processor|
         filter.call(size) do |msg|
           ret = nil
-          ms = Benchmark.realtime do
+          s = Benchmark.realtime do
             ret = processor.call(msg)
           end
-          Message.logger.info { "Processed one message in #{ms.to_i}ms" }
+          Message.logger.info { "Processed one message in #{(1000 * s).to_i}ms" }
           ret
         end
       end

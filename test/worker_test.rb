@@ -62,6 +62,15 @@ class WorkerTest < Minitest::Test
     end
   end
 
+  def test_start_worker_thread
+    t = Message.worker.start(1, 0.01)
+    Task.enq.plus(3)
+    sleep 0.1
+    assert_equal 4, Task.count
+  ensure
+    t.kill
+  end
+
   def test_enq_and_process_different_job
     Task.enq('job').plus(3)
     Message.worker.process
