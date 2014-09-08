@@ -61,4 +61,12 @@ class WorkerTest < Minitest::Test
       Task.enq.multiply(3)
     end
   end
+
+  def test_enq_and_process_different_job
+    Task.enq('job').plus(3)
+    Message.worker.process
+    assert_equal 1, Task.count
+    Message.worker('job').process
+    assert_equal 4, Task.count
+  end
 end

@@ -1,6 +1,8 @@
 require 'message/q'
 require 'message/job'
+require 'message/filters'
 require 'message/worker'
+require 'logger'
 
 module Message
   module_function
@@ -20,9 +22,25 @@ module Message
     end
   end
 
-  def worker
-    Worker.new
+  def worker(job=nil)
+    Worker.new(job)
   end
+
+  def logger
+    @logger ||= Logger.new(STDOUT)
+  end
+
+  def logger=(logger)
+    @logger = logger
+  end
+
+  def reset
+    Message.queue.reset
+    Message.job.reset
+    Message::Filters.load
+  end
+
+  reset
 end
 
-Object.send(:include, Message::Worker::SyntaxSugar)
+Object.send(:include, Message::Worker::Sugar)

@@ -5,8 +5,8 @@ module Message
         @filters ||= Hash.new{|h,k|h[k]=[]}
       end
 
-      def filter(type, &block)
-        filters[type] << block
+      def filter(type, name, &block)
+        filters[type] << [name, block]
       end
 
       def reset
@@ -38,8 +38,8 @@ module Message
 
     private
     def chain(type, base)
-      Job.filters[type].inject(base) do |m, f|
-        f.call(m)
+      Job.filters[type].reverse.inject(base) do |m, f|
+        f[1].call(m)
       end
     end
   end

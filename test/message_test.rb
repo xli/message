@@ -8,8 +8,7 @@ class MessageTest < Minitest::Test
   end
 
   def teardown
-    Message.job.reset
-    Message.queue.reset
+    Message.reset
   end
 
   def test_in_memory_queue
@@ -84,39 +83,39 @@ class MessageTest < Minitest::Test
   end
 
   def test_process_filter_when_processing_job
-    Message.job.filter(:process, &process_filter(1))
+    Message.job.filter(:process, :append_1, &process_filter(1))
     job = Message.job('name')
     job << 'msg'
     assert_equal 'msg 1', job.process
   end
 
-  def test_add_filter
-    Message.job.filter(:enq, &add_filter(1))
+  def test_enq_filter
+    Message.job.filter(:enq, :prepend_1, &enq_filter(1))
     job = Message.job('name')
     job << 'msg1'
     assert_equal '1 msg1', job.process
   end
 
-  def test_add_filters_order
+  def test_enq_filters_order
     log = []
-    Message.job.filter(:enq, &add_filter(1, log))
-    Message.job.filter(:enq, &add_filter(2, log))
+    Message.job.filter(:enq, :prepend_1, &enq_filter(1, log))
+    Message.job.filter(:enq, :prepend_2, &enq_filter(2, log))
 
     job = Message.job('name')
     job << 'msg1'
-    assert_equal [2, 1], log
-    assert_equal '1 2 msg1', job.process
+    assert_equal [1, 2], log
+    assert_equal '2 1 msg1', job.process
   end
 
   def test_process_filters_order
     log = []
-    Message.job.filter(:process, &process_filter(1, log))
-    Message.job.filter(:process, &process_filter(2, log))
+    Message.job.filter(:process, :append_1, &process_filter(1, log))
+    Message.job.filter(:process, :append_2, &process_filter(2, log))
 
     job = Message.job('name')
     job << 'msg'
-    assert_equal 'msg 1 2', job.process
-    assert_equal [2, 1], log
+    assert_equal 'msg 2 1', job.process
+    assert_equal [1, 2], log
   end
 
   def test_queue_adapter
@@ -126,7 +125,7 @@ class MessageTest < Minitest::Test
     assert_equal NewQueue, q.class
   end
 
-  def add_filter(prepend, log=[])
+  def enq_filter(prepend, log=[])
     lambda do |filter|
       lambda do |msg|
         log << prepend
