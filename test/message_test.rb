@@ -1,6 +1,6 @@
 require "test_helper"
 
-class MessageTest < Minitest::Test
+class MessageTest < Test::Unit::TestCase
   class NewQueue
     def initialize(name)
       @name = name

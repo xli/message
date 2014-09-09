@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class WorkerTest < Minitest::Test
+class WorkerTest < Test::Unit::TestCase
   module Counter
     def count
       $count ||= 1

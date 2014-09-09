@@ -1,6 +1,6 @@
 require "test_helper"
 
-class FiltersTest < Minitest::Test
+class FiltersTest < Test::Unit::TestCase
   class LoggerStub
     attr_reader :log
     def initialize
