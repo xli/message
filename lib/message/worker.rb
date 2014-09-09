@@ -28,7 +28,7 @@ module Message
     end
 
     class << self
-      attr_accessor :default_job, :synch
+      attr_accessor :default_job, :sync
 
       def default_job
         @default_job ||= DEFAULT_JOB_NAME
@@ -52,7 +52,7 @@ module Message
 
       def reset
         @default_job = nil
-        @synch = nil
+        @sync = nil
         @jobs = nil
       end
     end
@@ -84,7 +84,7 @@ module Message
 
     def enq(work)
       job.enq(YAML.dump(work)).tap do
-        process if self.class.synch
+        process if self.class.sync
       end
     end
     alias :<< :enq

@@ -99,7 +99,7 @@ class WorkerTest < Test::Unit::TestCase
   end
 
   def test_process_job_when_enq_for_test_environment
-    Message.worker.synch = true
+    Message.worker.sync = true
     Task.async.plus(3)
     assert_equal 4, Task.count
   end

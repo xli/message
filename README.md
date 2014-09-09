@@ -36,7 +36,7 @@ Inspired by delayed_job API, call .async.method(params) on any object and it wil
 
 ### Change to synchronize mode
 
-    Message.worker.synch = true
+    Message.worker.sync = true
 
 This is designed for test environment or Rails development environment.
 After set the synch option to true, the async jobs will be processed immediately when .async.method(params) is called.
