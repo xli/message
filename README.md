@@ -1,5 +1,7 @@
 # Message
 
+https://travis-ci.org/xli/message.svg?branch=master
+
 Message provides flexible & reliable background/asynchronous job processing mechanism on top of simple queue interface.
 
 Any developer can create queue adapter for Message to hook up different messaging/queue system.
@@ -11,6 +13,9 @@ and you can easily swap in other queues later.
 ## Installation
 
 
+### Use AWS SQS as back-end queue system
+
+    gem 'message-sqs'
 
 ## How to use
 
