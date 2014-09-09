@@ -1,6 +1,5 @@
 require 'message/q'
 require 'message/job'
-require 'message/filters'
 require 'message/worker'
 require 'logger'
 
@@ -37,7 +36,6 @@ module Message
   def reset
     Message.queue.reset
     Message.job.reset
-    Message::Filters.load
   end
 
   reset

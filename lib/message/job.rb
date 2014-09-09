@@ -1,8 +1,10 @@
+require 'message/filters'
+
 module Message
   class Job
     class << self
       def filters
-        @filters ||= Hash.new{|h,k|h[k]=[]}
+        @filters ||= Filters.new
       end
 
       def filter(type, name, &block)
