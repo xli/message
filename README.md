@@ -22,17 +22,31 @@ and you can easily swap in other queues later.
 ### Queuing jobs
 
 
-Inspired by delayed_job API, call .enq.method(params) on any object and it will be processed in the background.
+Inspired by delayed_job API, call .async.method(params) on any object and it will be processed in the background.
 
     # without message
     @img.resize(36)
 
     # with message
-    @img.enq.resize(36)
+    @img.async.resize(36)
 
 ### Start worker to process jobs
 
     Message.worker.start
+
+### Change to synchronize mode
+
+    Message.worker.synch = true
+
+This is designed for test environment or Rails development environment.
+After set the synch option to true, the async jobs will be processed immediately when .async.method(params) is called.
+The default value is false.
+
+### Change default worker job name
+
+For some environment or queue system (e.g. AWS SQS), you will need set an application specific job name, so that you can share same account for multiple applications using Message.
+
+    Message.worker.default_job = "app-name-#{Rails.env}-message-default"
 
 ## Job interface specification
 

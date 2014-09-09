@@ -22,7 +22,11 @@ module Message
   end
 
   def worker(job=nil)
-    Worker.new(job)
+    if job
+      Worker.new(job)
+    else
+      Worker
+    end
   end
 
   def logger

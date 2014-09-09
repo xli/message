@@ -8,6 +8,5 @@
   * enq, deq, process
 * enqueue transaction?
 * Rails integration
-  * process message when enqueue in test
   * config logger
   * generate an initializer for configuring Message

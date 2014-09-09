@@ -8,7 +8,7 @@ module Message
       class Enq
         def initialize(obj, job)
           @obj = obj
-          @job = job || Worker.default_job
+          @job = job
         end
 
         def method_missing(m, *args, &block)
@@ -18,67 +18,49 @@ module Message
           unless @obj.respond_to?(m)
             raise NoMethodError, "undefined method `#{m}' for #{@obj.inspect}"
           end
-          Worker.enq(@job, [@obj, m, args])
+          Message.worker(@job) << [@obj, m, args]
         end
       end
 
-      def enq(job=nil)
-        Enq.new(self, job)
+      def async(job=nil)
+        Enq.new(self, job || Message.worker.default_job)
       end
     end
 
     class << self
-      def default_job=(name)
-        @default_job = name
-      end
+      attr_accessor :default_job, :synch
 
       def default_job
         @default_job ||= DEFAULT_JOB_NAME
+      end
+
+      def default
+        new(default_job)
+      end
+
+      def process(*args)
+        default.process(*args)
+      end
+
+      def start(*args)
+        default.start(*args)
       end
 
       def jobs
         @jobs ||= RUBY_PLATFORM =~ /java/ ? java.util.concurrent.ConcurrentHashMap.new : {}
       end
 
-      def job(name)
-        jobs[name] ||= Message.job(name, &job_processor)
-      end
-
-      def enq(name, work)
-        job(name).enq(YAML.dump(work))
-      end
-
       def reset
         @default_job = nil
+        @synch = nil
         @jobs = nil
       end
-
-      def job_processor
-        lambda do |msg|
-          obj, m, args = YAML.load(msg)
-          obj.send(m, *args)
-        end
-      end
     end
+
+    attr_reader :job_name
 
     def initialize(job_name)
       @job_name = job_name
-    end
-
-    def default_job=(name)
-      self.class.default_job = name
-    end
-
-    def default_job
-      self.class.default_job
-    end
-
-    def reset
-      self.class.reset
-    end
-
-    def job_name
-      @job_name ||= default_job
     end
 
     def start(size=10, interval=1)
@@ -97,10 +79,28 @@ module Message
     end
 
     def process(size=1)
-      Worker.job(job_name).process(size)
+      job.process(size)
     end
 
+    def enq(work)
+      job.enq(YAML.dump(work)).tap do
+        process if self.class.synch
+      end
+    end
+    alias :<< :enq
+
     private
+    def job
+      self.class.jobs[@job_name] ||= Message.job(@job_name, &job_processor)
+    end
+
+    def job_processor
+      lambda do |msg|
+        obj, m, args = YAML.load(msg)
+        obj.send(m, *args)
+      end
+    end
+
     def log(level, &block)
       Message.logger.send(level) { "[Worker(#{Thread.current.object_id})] #{block.call}" }
     end
