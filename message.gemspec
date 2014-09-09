@@ -3,8 +3,12 @@ Gem::Specification.new do |s|
   s.version = '0.0.1'
   s.summary = 'Simplify Ruby messaging/queue/async/job processing.'
   s.description = <<-EOF
-Message provides reliable background/asynchronous job processing mechanism on top of simple queue interface.
-Also, Message provides an in-memory queue for making development and test easier.
+Message provides flexible & reliable background/asynchronous job processing mechanism on top of simple queue interface.
+
+Any developer can create queue adapter for Message to hook up different messaging/queue system.
+
+One in-memory queue is included with Message for you to start development and test,
+and you can easily swap in other queues later.
 EOF
   s.license = 'MIT'
   s.authors = ["Xiao Li"]

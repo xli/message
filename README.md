@@ -1,22 +1,29 @@
 # Message
 
-Message provides reliable background/asynchronous job processing mechanism on top of simple queue interface.
+Message provides flexible & reliable background/asynchronous job processing mechanism on top of simple queue interface.
 
-You can plugin different queue implementation for different messaging system without worrying about job processing.
+Any developer can create queue adapter for Message to hook up different messaging/queue system.
 
-Also, Message provides an in-memory queue for making development and test easier.
+One in-memory queue is included with Message for you to start development and test,
+and you can easily swap in other queues later.
+
+
+## Installation
+
+
 
 ## How to use
 
-### Enqueue background job
+### Queuing jobs
 
-Change from:
 
-    WelcomeMailer.deliver(user)
+Inspired by delayed_job API, call .enq.method(params) on any object and it will be processed in the background.
 
-To:
+    # without message
+    @img.resize(36)
 
-    WelcomeMailer.enq.deliver(user)
+    # with message
+    @img.enq.resize(36)
 
 ### Start worker to process jobs
 
@@ -71,7 +78,6 @@ Checkout all filters:
 
 ### process filter
 
-
     Message.job.filter(:process) do |filter, job|
       lambda do |size, &processor|
         filter.call(size) do |msg|
@@ -106,10 +112,10 @@ Enqueue message, non-blocking.
 
 ### deq(size, &block)
 
-Dequeue message, non-blocking. Should remove message from queue.
+Dequeue message, non-blocking.
+It is up to Queue implementation when to delete the message in queue when deq got called with a block.
 
 ### size
 
 (Approximate) queue size.
-
 
