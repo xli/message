@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'message'
-  s.version = '0.0.1'
+  s.version = '0.0.2'
   s.summary = 'Simplify Ruby messaging/queue/async/job processing.'
   s.description = <<-EOF
 Message provides flexible & reliable background/asynchronous job processing mechanism on top of simple queue interface.
