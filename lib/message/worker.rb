@@ -8,7 +8,7 @@ module Message
       class Enq
         def initialize(obj, job)
           @obj = obj
-          @job = job
+          @job = job || Worker.default_job
         end
 
         def method_missing(m, *args, &block)
@@ -22,12 +22,20 @@ module Message
         end
       end
 
-      def enq(job=DEFAULT_JOB_NAME)
+      def enq(job=nil)
         Enq.new(self, job)
       end
     end
 
     class << self
+      def default_job=(name)
+        @default_job = name
+      end
+
+      def default_job
+        @default_job ||= DEFAULT_JOB_NAME
+      end
+
       def jobs
         @jobs ||= RUBY_PLATFORM =~ /java/ ? java.util.concurrent.ConcurrentHashMap.new : {}
       end
@@ -40,6 +48,11 @@ module Message
         job(name).enq(YAML.dump(work))
       end
 
+      def reset
+        @default_job = nil
+        @jobs = nil
+      end
+
       def job_processor
         lambda do |msg|
           obj, m, args = YAML.load(msg)
@@ -49,7 +62,23 @@ module Message
     end
 
     def initialize(job_name)
-      @job_name = job_name || DEFAULT_JOB_NAME
+      @job_name = job_name
+    end
+
+    def default_job=(name)
+      self.class.default_job = name
+    end
+
+    def default_job
+      self.class.default_job
+    end
+
+    def reset
+      self.class.reset
+    end
+
+    def job_name
+      @job_name ||= default_job
     end
 
     def start(size=10, interval=1)
@@ -68,7 +97,7 @@ module Message
     end
 
     def process(size=1)
-      Worker.job(@job_name).process(size)
+      Worker.job(job_name).process(size)
     end
 
     private

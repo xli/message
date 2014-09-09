@@ -30,6 +30,10 @@ class WorkerTest < Test::Unit::TestCase
     Counter.reset
   end
 
+  def teardown
+    Message.reset
+  end
+
   def test_object_instance_syntax_sugar_and_worker_defaults
     t = Task.new
     t.enq.plus(2)
@@ -77,5 +81,20 @@ class WorkerTest < Test::Unit::TestCase
     assert_equal 1, Task.count
     Message.worker('job').process
     assert_equal 4, Task.count
+  end
+
+  def test_change_default_job_name
+    Message.worker.default_job = 'new-default-job'
+    Task.enq.plus(3)
+    Message.worker.process
+    assert_equal 4, Task.count
+
+    Task.enq('new-default-job').plus(3)
+    Message.worker.process
+    assert_equal 4 + 3, Task.count
+
+    Task.enq.plus(3)
+    Message.worker('new-default-job').process
+    assert_equal 7 + 3, Task.count
   end
 end

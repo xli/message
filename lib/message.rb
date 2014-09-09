@@ -36,6 +36,7 @@ module Message
   def reset
     Message.queue.reset
     Message.job.reset
+    Message.worker.reset
   end
 
   reset
