@@ -1,5 +1,4 @@
 * Ruby 1.8 support
-* JRuby support: use thread safe hash for worker jobs
 * Worker:
   * better logging
   * restart after crashed

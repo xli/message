@@ -29,11 +29,15 @@ module Message
 
     class << self
       def jobs
-        @jobs ||= Hash.new{|h,k| h[k] = Message.job(k, &job_processor)}
+        @jobs ||= RUBY_PLATFORM =~ /java/ ? java.util.concurrent.ConcurrentHashMap.new : {}
+      end
+
+      def job(name)
+        jobs[name] ||= Message.job(name, &job_processor)
       end
 
       def enq(name, work)
-        jobs[name].enq(YAML.dump(work))
+        job(name).enq(YAML.dump(work))
       end
 
       def job_processor
@@ -64,7 +68,7 @@ module Message
     end
 
     def process(size=1)
-      Worker.jobs[@job_name].process(size)
+      Worker.job(@job_name).process(size)
     end
 
     private
