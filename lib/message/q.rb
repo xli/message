@@ -1,5 +1,8 @@
 require 'message/in_memory_queue'
 module Message
+  class AdapterNotFoundError < StandardError
+  end
+
   module Q
     module_function
     def init(name)
@@ -15,6 +18,10 @@ module Message
     end
 
     def adapter=(name)
+      name = name.to_sym
+      unless adapters.has_key?(name)
+        raise AdapterNotFoundError, "Could not find adapter named #{name.inspect}"
+      end
       @adapter = name
     end
 

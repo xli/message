@@ -125,6 +125,17 @@ class MessageTest < Test::Unit::TestCase
     assert_equal NewQueue, q.class
   end
 
+  def test_adapter_not_exist
+    assert_raise Message::AdapterNotFoundError do
+      Message.queue.adapter = :nn
+    end
+  end
+
+  def test_string_adapter_name
+    Message.queue.adapter = 'in_memory'
+    assert_equal :in_memory, Message.queue.adapter
+  end
+
   def enq_filter(prepend, log=[])
     lambda do |filter, job|
       lambda do |msg|
