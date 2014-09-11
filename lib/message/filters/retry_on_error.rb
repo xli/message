@@ -9,10 +9,10 @@ module Message
       end
 
       def call(filter, _, _)
-        lambda do |msg|
+        lambda do |arg|
           @try = 0
           begin
-            filter.call(msg)
+            filter.call(arg)
           rescue self.on => e
             @try += 1
             if @try < self.tries

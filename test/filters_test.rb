@@ -23,14 +23,17 @@ class FiltersTest < Test::Unit::TestCase
     Message.reset
   end
 
-  def test_benchmarking
+  def test_benchmarking_process_only
     job = Message.job('name') {|msg| msg}
     job << 1
     job.process(2)
-    assert_logged("processed in")
+    logs = Message.logger.log.select do |l|
+      l =~ /processed in/
+    end
+    assert_equal 1, logs.size
   end
 
-  def test_error_handling
+  def test_error_handling_on_processing
     count = 1
     job = Message.job('count') {|msg| count += msg}
     job << '1'
@@ -38,69 +41,38 @@ class FiltersTest < Test::Unit::TestCase
     job.process(2)
     assert_equal 0, job.size
     assert_equal 1+1, count
-    assert_logged("process count message failed")
-  end
-
-  def test_error_handling_for_processing_error
-    job = OpenStruct.new(:name => 'count')
-    filter = lambda do |msg|
-      raise 'error'
-    end
-    Message.job.filters.error_handling.call(filter, job, :process).call('msg')
-    assert_logged("process count message failed")
+    assert_logged(/process count message failed/)
   end
 
   def test_error_handling_for_enq_error
-    job = OpenStruct.new(:name => 'count')
-    filter = lambda do |msg|
-      raise 'error'
-    end
-    Message.job.filters.error_handling.call(filter, job, :enq).call('msg')
-    assert_logged("enq count message failed")
+    job = Message.job.new('queue')
+    job << 'msg'
+    assert_logged(/enq unknown job\(find job name failed\) message failed/)
   end
 
-  def test_error_handling_callback_when_enq_failed
-    log = []
-    Message.job.filters.error_handling.callback = lambda do |error, msg, job, action|
-      log << [error, msg, job, action]
-    end
-    job = OpenStruct.new(:name => 'count')
-    Message.job.filters.error_handling.call(lambda{|_| raise "error"}, job, :enq).call('msg')
-    assert_equal 1, log.size
-    assert_equal ['msg', job, :enq], log[0][1..3]
-    assert_equal RuntimeError, log[0][0].class
-    assert_equal 'error', log[0][0].message
+  def test_error_handling_for_deq_error
+    job = Message.job.new('queue')
+    job.process
+    assert_logged(/deq unknown job\(find job name failed\) message failed/)
   end
 
-  # def test_error_handling_callback_when_deq_failed
-  #   log = []
-  #   Message.job.filters.error_handling.callback = lambda do |error, msg, job, action|
-  #     log << [error, msg, job, action]
-  #   end
-  #   job = OpenStruct.new(:name => 'count')
-  #
-  #   Message.job.filters.error_handling.call(lambda{|_| raise "error"}, job).call('msg')
-  #
-  #   assert_equal 1, log.size
-  #   assert_equal [:process, job, nil], log[0][0..2]
-  #   assert_equal RuntimeError, log[0][3].class
-  #   assert_equal 'error', log[0][3].message
-  # end
-
-  def test_error_handling_callback_when_process_message_failed
-    log = []
+  def test_error_handling_callback
+    errors = []
     Message.job.filters.error_handling.callback = lambda do |error, msg, job, action|
-      log << [error, msg, job, action]
+      errors << [error, msg, job, action]
     end
-    job = OpenStruct.new(:name => 'count')
-    deq = lambda {|_| raise 'error'}
+    job = Message.job('count') {|msg| raise 'error'}
+    job << 'msg'
+    job.process
 
-    Message.job.filters.error_handling.call(deq, job, :process).call('msg')
+    assert_equal 1, errors.size
 
-    assert_equal 1, log.size
-    assert_equal ['msg', job, :process], log[0][1..3]
-    assert_equal RuntimeError, log[0][0].class
-    assert_equal 'error', log[0][0].message
+    assert_equal RuntimeError, errors[0][0].class
+    assert_equal 'error', errors[0][0].message
+
+    assert_equal 'msg', errors[0][1]
+    assert_equal job, errors[0][2]
+    assert_equal :process, errors[0][3]
   end
 
   def test_retry_on_error_default_configs
@@ -109,36 +81,44 @@ class FiltersTest < Test::Unit::TestCase
     assert_equal 0.1, Message.job.filters.retry_on_error.sleep
   end
 
-  def test_retry_on_error
-    job = OpenStruct.new(:name => 'count')
-    count = 0
-    enq = lambda do |msg|
-      count += 1
-      raise 'error'
+  def test_retry_on_enq_error
+    q = []
+    def q.enq(msg)
+      self << 'error'
+      raise "error"
     end
 
-    assert_raise RuntimeError do
-      Message.job.filters.retry_on_error.call(enq, job, :enq).call('msg')
-    end
+    job = Message.job.new(q)
+    job << 'msg'
 
-    assert_equal 3, count
+    assert_equal 3, q.size
   end
 
   def test_retry_on_processing_error
     count = 0
-    job = Message.job('name') do |msg|
-      count += 1
-      raise "error"
-    end
-    job << 1
+    job = Message.job('job') {|msg| count += 1; raise 'error'}
+    job << 'msg'
     job.process
     assert_equal 3, count
   end
 
-  def assert_logged(msg)
-    m = Message.logger.log.find do |l|
-      l =~ /#{msg}/i
+  def test_retry_on_deq_error
+    q = []
+    def q.deq(msg)
+      self << 'error'
+      raise "error"
     end
-    assert m, "Could not find log has message: #{msg.inspect}"
+
+    job = Message.job.new(q)
+    job.process
+
+    assert_equal 3, q.size
+  end
+
+  def assert_logged(regex)
+    m = Message.logger.log.find do |l|
+      l =~ regex
+    end
+    assert m, "Could not find log match regex: #{regex.inspect}, log: \n#{Message.logger.log.join("\n")}"
   end
 end

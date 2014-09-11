@@ -30,14 +30,17 @@ module Message
     end
 
     def enq(msg)
-      chain(:enq, @queue.method(:enq)).call(msg)
+      chain(:enq, lambda {|msg| @queue.enq(msg)}).call(msg)
     end
     alias :<< :enq
 
     def process(size=1)
-      @queue.deq(size) do |msg|
-        chain(:process, @processor).call(msg)
+      deq = lambda do |size|
+        @queue.deq(size) do |msg|
+          chain(:process, @processor).call(msg)
+        end
       end
+      chain(:deq, deq).call(size)
     end
 
     private

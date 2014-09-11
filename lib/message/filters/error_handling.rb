@@ -8,7 +8,8 @@ module Message
           begin
             filter.call(msg)
           rescue => e
-            Message.logger.error {"#{action} #{job.name} message failed, #{e.class}: #{e.message}\n#{e.backtrace.join("\n")}"}
+            job_name = job.name rescue 'unknown job(find job name failed)'
+            Message.logger.error {"#{action} #{job_name} message failed, #{e.class}: #{e.message}\n#{e.backtrace.join("\n")}"}
             if self.callback
               self.callback.call(e, msg, job, action)
             end

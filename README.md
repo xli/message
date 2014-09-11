@@ -48,6 +48,24 @@ For some environment or queue system (e.g. AWS SQS), you will need set an applic
 
     Message.worker.default_job = "app-name-#{Rails.env}-message-default"
 
+### Change backend queue system
+
+By change queue adapter:
+
+    Message.queue.adapter = :sqs
+
+### Checkout all initialized backend queue system
+
+    Message.queue.adapters
+
+## Queue adapters
+
+Change queue adapter to change different queue implementation. Default is a in memory queue for testing and development environments.
+
+### Add a new adapter
+
+    Message.queue.adapters[:sqs] = Message::SqsQueue
+
 ## Job interface specification
 
 Job = a queue + message processor
@@ -103,18 +121,6 @@ Checkout all filters:
         filter.call(msg)
       end
     end
-
-## Queue adapters
-
-Change queue adapter to change different queue implementation. Default is a in memory queue for testing and development environments.
-
-### Change adapter
-
-    Message.queue.adapter = :sqs
-
-### Add a new adapter
-
-    Message.queue.adapters[:sqs] = Message::SqsQueue
 
 ## Queue interface specification
 
