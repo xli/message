@@ -10,3 +10,5 @@
 * Rails integration
   * config logger
   * generate an initializer for configuring Message
+* error handling:
+  * circuit breaker?

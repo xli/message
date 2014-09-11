@@ -46,7 +46,7 @@ class FiltersTest < Test::Unit::TestCase
     filter = lambda do |size|
       raise 'error'
     end
-    Message.job.filters.error_handling(filter, job).call(1) {|_| }
+    Message.job.filters.error_handling.call(filter, job).call(1) {|_| }
     assert_logged("process count message failed")
   end
 
@@ -55,17 +55,17 @@ class FiltersTest < Test::Unit::TestCase
     filter = lambda do |msg|
       raise 'error'
     end
-    Message.job.filters.error_handling(filter, job).call('msg')
+    Message.job.filters.error_handling.call(filter, job).call('msg')
     assert_logged("enq count message failed")
   end
 
   def test_error_handling_callback_when_enq_failed
     log = []
-    Message.job.filters.config[:error_handling_callback] = lambda do |type, job, msg, error|
+    Message.job.filters.error_handling.callback = lambda do |type, job, msg, error|
       log << [type, job, msg, error]
     end
     job = OpenStruct.new(:name => 'count')
-    Message.job.filters.error_handling(lambda{|_| raise "error"}, job).call('msg')
+    Message.job.filters.error_handling.call(lambda{|_| raise "error"}, job).call('msg')
     assert_equal 1, log.size
     assert_equal [:enq, job, 'msg'], log[0][0..2]
     assert_equal RuntimeError, log[0][3].class
@@ -74,12 +74,12 @@ class FiltersTest < Test::Unit::TestCase
 
   def test_error_handling_callback_when_deq_failed
     log = []
-    Message.job.filters.config[:error_handling_callback] = lambda do |type, job, msg, error|
+    Message.job.filters.error_handling.callback = lambda do |type, job, msg, error|
       log << [type, job, msg, error]
     end
     job = OpenStruct.new(:name => 'count')
 
-    Message.job.filters.error_handling(lambda{|_| raise "error"}, job).call(1) {|_|}
+    Message.job.filters.error_handling.call(lambda{|_| raise "error"}, job).call(1) {|_|}
 
     assert_equal 1, log.size
     assert_equal [:process, job, nil], log[0][0..2]
@@ -89,13 +89,13 @@ class FiltersTest < Test::Unit::TestCase
 
   def test_error_handling_callback_when_process_message_failed
     log = []
-    Message.job.filters.config[:error_handling_callback] = lambda do |type, job, msg, error|
+    Message.job.filters.error_handling.callback = lambda do |type, job, msg, error|
       log << [type, job, msg, error]
     end
     job = OpenStruct.new(:name => 'count')
     deq = lambda{|_, &block| block.call('msg')}
 
-    Message.job.filters.error_handling(deq, job).call(1) {|_| raise 'error'}
+    Message.job.filters.error_handling.call(deq, job).call(1) {|_| raise 'error'}
 
     assert_equal 1, log.size
     assert_equal [:process, job, 'msg'], log[0][0..2]
