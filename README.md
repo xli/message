@@ -76,32 +76,31 @@ Process multiple messages
 
 You can add job filter to add additional functions to enqueue and process job message
 
-    Message.job.filter(filter_name) do |next_filter, job|
+    Message.job.filter(filter_name) do |next_filter, job, action|
       lambda do |*args, &block|
         next_filter.call(*args, &block)
       end
     end
 
-Filters will be applied as the order initialized.
+Filters will be called as a chain by the order of initializing the filters.
+When a job action executes, filters will be called to initialize a proc/lambda for executing
+the action with parameters:
+
+    next_filter: next filter's proc/lambda
+    job: the job object executes the action
+    action: :enq, :deq, :process
+
+
 Checkout all filters:
 
-    Message.job.filters
+    Message.job.filters # an Enumerable object
 
-### enq filter
+### filter example: log job actions
 
-    Message.job.filter(:enq) do |filter, job|
-      lambda do |work|
-        filter.call(work)
-      end
-    end
-
-### process filter
-
-    Message.job.filter(:process) do |filter, job|
-      lambda do |size, &processor|
-        filter.call(size) do |msg|
-          processor.call(msg)
-        end
+    Message.job.filter do |filter, job, action|
+      lambda do |msg|
+        Message.logger.info { "#{actoin} #{job.name} message: #{msg}" }
+        filter.call(msg)
       end
     end
 

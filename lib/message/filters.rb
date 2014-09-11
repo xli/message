@@ -1,33 +1,37 @@
 require 'message/filters/error_handling'
 require 'message/filters/benchmarking'
+require 'message/filters/retry_on_error'
 
 module Message
   class Filters
-    attr_accessor :error_handling, :benchmarking
+    include Enumerable
+
+    attr_accessor :error_handling, :benchmarking, :retry_on_error
 
     def initialize
-      @data = {:process => [], :enq => []}
+      @data = []
       @error_handling = ErrorHandling.new
       @benchmarking = Benchmarking.new
+      @retry_on_error = RetryOnError.new
       load(defaults)
     end
 
-    def [](type)
-      @data[type]
+    def <<(filter)
+      @data << filter
     end
 
     def load(data)
-      data.each do |t, m|
-        @data[t] << [m, send(m)]
+      data.each do |m|
+        @data << [m, send(m)]
       end
     end
 
     def defaults
-      [
-        [:process, :error_handling],
-        [:enq, :error_handling],
-        [:process, :benchmarking]
-      ]
+      [:error_handling, :benchmarking, :retry_on_error]
+    end
+
+    def each(&block)
+      @data.each(&block)
     end
   end
 end

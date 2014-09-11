@@ -83,38 +83,38 @@ class MessageTest < Test::Unit::TestCase
   end
 
   def test_process_filter_when_processing_job
-    Message.job.filter(:process, :append_1, &process_filter(1))
+    Message.job.filter(:append_1, &process_filter(1))
     job = Message.job('name')
     job << 'msg'
-    assert_equal 'msg 1', job.process
+    assert_equal 'process msg 1', job.process
   end
 
   def test_enq_filter
-    Message.job.filter(:enq, :prepend_1, &enq_filter(1))
+    Message.job.filter(:prepend_1, &enq_filter(1))
     job = Message.job('name')
     job << 'msg1'
-    assert_equal '1 msg1', job.process
+    assert_equal 'enq 1 msg1', job.process
   end
 
   def test_enq_filters_order
     log = []
-    Message.job.filter(:enq, :prepend_1, &enq_filter(1, log))
-    Message.job.filter(:enq, :prepend_2, &enq_filter(2, log))
+    Message.job.filter(:prepend_1, &enq_filter(1, log))
+    Message.job.filter(:prepend_2, &enq_filter(2, log))
 
     job = Message.job('name')
     job << 'msg1'
     assert_equal [1, 2], log
-    assert_equal '2 1 msg1', job.process
+    assert_equal 'enq 2 enq 1 msg1', job.process
   end
 
   def test_process_filters_order
     log = []
-    Message.job.filter(:process, :append_1, &process_filter(1, log))
-    Message.job.filter(:process, :append_2, &process_filter(2, log))
+    Message.job.filter(:append_1, &process_filter(1, log))
+    Message.job.filter(:append_2, &process_filter(2, log))
 
     job = Message.job('name')
     job << 'msg'
-    assert_equal 'msg 2 1', job.process
+    assert_equal 'process process msg 1 2', job.process
     assert_equal [1, 2], log
   end
 
@@ -137,21 +137,29 @@ class MessageTest < Test::Unit::TestCase
   end
 
   def enq_filter(prepend, log=[])
-    lambda do |filter, job|
+    lambda do |filter, job, action|
       lambda do |msg|
-        log << prepend
-        filter.call("#{prepend} #{msg}")
+        msg = if action == :enq
+          log << prepend
+          "#{action} #{prepend} #{msg}"
+        else
+          msg
+        end
+        filter.call(msg)
       end
     end
   end
 
   def process_filter(append, log=[])
-    lambda do |filter, job|
-      lambda do |size, &processor|
-        log << append
-        filter.call(size) do |msg|
-          processor.call("#{msg} #{append}")
+    lambda do |filter, job, action|
+      lambda do |msg|
+        msg = if action == :process
+          log << append
+          "#{action} #{msg} #{append}"
+        else
+          msg
         end
+        filter.call(msg)
       end
     end
   end

@@ -7,8 +7,8 @@ module Message
         @filters ||= Filters.new
       end
 
-      def filter(type, name, &block)
-        filters[type] << [name, block]
+      def filter(name, &block)
+        filters << [name, block]
       end
 
       def reset
@@ -35,13 +35,15 @@ module Message
     alias :<< :enq
 
     def process(size=1)
-      chain(:process, @queue.method(:deq)).call(size, &@processor)
+      @queue.deq(size) do |msg|
+        chain(:process, @processor).call(msg)
+      end
     end
 
     private
-    def chain(type, base)
-      Job.filters[type].reverse.inject(base) do |m, f|
-        f[1].call(m, self)
+    def chain(action, base)
+      Job.filters.to_a.reverse.inject(base) do |m, f|
+        f[1].call(m, self, action)
       end
     end
   end
