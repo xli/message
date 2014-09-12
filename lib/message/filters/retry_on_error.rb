@@ -5,7 +5,7 @@ module Message
       def initialize
         @tries = 3
         @on = StandardError
-        @sleep = 0.1
+        @sleep = 0.001
       end
 
       def call(filter, _, _)

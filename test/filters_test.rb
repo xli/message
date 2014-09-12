@@ -78,7 +78,7 @@ class FiltersTest < Test::Unit::TestCase
   def test_retry_on_error_default_configs
     assert_equal 3, Message.job.filters.retry_on_error.tries
     assert_equal StandardError, Message.job.filters.retry_on_error.on
-    assert_equal 0.1, Message.job.filters.retry_on_error.sleep
+    assert_equal 0.001, Message.job.filters.retry_on_error.sleep
   end
 
   def test_retry_on_enq_error
