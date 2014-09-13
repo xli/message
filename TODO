@@ -2,10 +2,6 @@
 * Worker:
   * better logging
   * restart after crashed
-* timeout:
-  * enq, deq, process
-* retry on failure
-  * enq, deq, process
 * enqueue transaction?
 * Rails integration
   * config logger
