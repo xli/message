@@ -33,11 +33,21 @@ Add an initializer config/initializers/message.rb
     # Change to sqs adapter for asynchronous calls, default is a thread-safe in memory queue named :in_memory
     Message.queue.adapter = :sqs
 
+Start worker thread for JRuby in config/initializers/message.rb:
+
     # Start a worker thread in production
     if Rails.env.production? && $0 !~ /rake$/
       # Sleep 15 seconds for processed every 10 jobs or less
       # default: size = 10, interval = 5
       Message.worker.start(:size => 10, :interval => 15)
+    end
+
+Add a rake task for start worker process
+
+    namespace :message do
+      task :worker do
+        Message.worker.start(:size => 10, :interval => 15).join
+      end
     end
 
 ### Queuing jobs
