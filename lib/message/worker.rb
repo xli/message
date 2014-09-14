@@ -3,6 +3,8 @@ require 'yaml'
 module Message
   class Worker
     DEFAULT_JOB_NAME = 'message-worker-default'
+    DEFAULT_PROCESS_SIZE = 10
+    DEFAULT_PROCESS_INTERVAL = 5
 
     module Enqueue
       class Enq
@@ -63,7 +65,9 @@ module Message
       @job_name = job_name
     end
 
-    def start(size=10, interval=1)
+    def start(options={})
+      size = options[:size] || DEFAULT_PROCESS_SIZE
+      interval = options[:interval] || DEFAULT_PROCESS_INTERVAL
       Thread.start do
         begin
           log(:info) { "start" }
@@ -83,8 +87,10 @@ module Message
     end
 
     def enq(work)
-      job.enq(YAML.dump(work)).tap do
-        process if self.class.sync
+      if self.class.sync
+        process_work(work)
+      else
+        job.enq(YAML.dump(work))
       end
     end
     alias :<< :enq
@@ -96,9 +102,13 @@ module Message
 
     def job_processor
       lambda do |msg|
-        obj, m, args = YAML.load(msg)
-        obj.send(m, *args)
+        process_work(YAML.load(msg))
       end
+    end
+
+    def process_work(work)
+      obj, m, args = work
+      obj.send(m, *args)
     end
 
     def log(level, &block)

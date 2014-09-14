@@ -20,6 +20,26 @@ and you can easily swap in other queues later.
 
 ## How to use
 
+### Initialization
+
+Add an initializer config/initializers/message.rb
+
+    Message.logger = Rails.logger
+    # Setup default job queue name, default: "message-worker-default"
+    Message.worker.default_job = "app-name-#{Rails.env}-message-worker-default"
+    # Bypass queue system and process job synchronously when you called .async
+    # default: false
+    Message.worker.sync = !Rails.env.production?
+    # Change to sqs adapter for asynchronous calls, default is a thread-safe in memory queue named :in_memory
+    Message.queue.adapter = :sqs
+
+    # Start a worker thread in production
+    if Rails.env.production? && $0 !~ /rake$/
+      # Sleep 15 seconds for processed every 10 jobs or less
+      # default: size = 10, interval = 5
+      Message.worker.start(:size => 10, :interval => 15)
+    end
+
 ### Queuing jobs
 
 

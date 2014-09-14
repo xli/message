@@ -9,3 +9,4 @@
   * clear active connections
 * error handling:
   * circuit breaker?
+* provide a consistent way to config queue adapters.
