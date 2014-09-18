@@ -7,11 +7,11 @@ module Message
           return filter.call(msg) unless action == :process
 
           ret = nil
-          Message.logger.info { "#{job.name}: processing one message"}
+          Message.log(:info) { "#{job.name}: processing one message"}
           s = Benchmark.realtime do
             ret = filter.call(msg)
           end
-          Message.logger.info { "#{job.name}: processed in #{(1000 * s).to_i}ms" }
+          Message.log(:info) { "#{job.name}: processed in #{(1000 * s).to_i}ms" }
           ret
         end
       end

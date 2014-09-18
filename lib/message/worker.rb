@@ -71,15 +71,16 @@ module Message
       delay = options[:delay] || 10 + rand(20)
       Thread.start do
         begin
-          log(:info) { "start" }
+          Message.log(:info) { "[Worker] start in #{delay}" }
           sleep delay
           loop do
             process(size)
             sleep interval
           end
-          log(:info) { "stopped" }
         rescue => e
-          log(:error) { "crashed: #{e.message}\n#{e.backtrace.join("\n")}"}
+          Message.log(:error) { "[Worker] crashed: #{e.message}\n#{e.backtrace.join("\n")}"}
+        ensure
+          Message.log(:info) { "[Worker] stopped" }
         end
       end
     end
@@ -111,10 +112,6 @@ module Message
     def process_work(work)
       obj, m, args = work
       obj.send(m, *args)
-    end
-
-    def log(level, &block)
-      Message.logger.send(level) { "[Worker(#{Thread.current.object_id})] #{block.call}" }
     end
   end
 end

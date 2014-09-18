@@ -29,6 +29,10 @@ module Message
     end
   end
 
+  def log(level, &block)
+    Message.logger.send(level) { "[Thread-#{Thread.current.object_id}] #{block.call}" }
+  end
+
   def logger
     @logger ||= Logger.new(STDOUT)
   end
