@@ -26,7 +26,7 @@ Add an initializer config/initializers/message.rb
 
     Message.logger = Rails.logger
     # Setup default job queue name, default: "message-worker-default"
-    Message.worker.default_job = "app-name-#{Rails.env}-message-worker-default"
+    Message.worker.default_job = "app-name-#{ENV['MESSAGE_NAMESPACE']}-message-worker-default"
     # Bypass queue system and process job synchronously when you called .async
     # default: false
     Message.worker.sync = !Rails.env.production?

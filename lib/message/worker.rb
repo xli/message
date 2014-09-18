@@ -68,9 +68,11 @@ module Message
     def start(options={})
       size = options[:size] || DEFAULT_PROCESS_SIZE
       interval = options[:interval] || DEFAULT_PROCESS_INTERVAL
+      delay = options[:delay] || 10 + rand(20)
       Thread.start do
         begin
           log(:info) { "start" }
+          sleep delay
           loop do
             process(size)
             sleep interval

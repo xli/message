@@ -67,7 +67,7 @@ class WorkerTest < Test::Unit::TestCase
   end
 
   def test_start_worker_thread
-    t = Message.worker.start(size: 1, interval: 0.01)
+    t = Message.worker.start(size: 1, interval: 0.01, delay: 0)
     Task.async.plus(3)
     sleep 0.1
     assert_equal 4, Task.count
