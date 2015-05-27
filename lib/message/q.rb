@@ -18,6 +18,10 @@ module Message
     end
 
     def adapter=(name)
+      if name.nil?
+        @adapter = nil
+        return
+      end
       name = name.to_sym
       unless adapters.has_key?(name)
         raise AdapterNotFoundError, "Could not find adapter named #{name.inspect}"

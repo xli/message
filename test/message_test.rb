@@ -135,6 +135,13 @@ class MessageTest < Test::Unit::TestCase
     Message.queue.adapter = 'in_memory'
     assert_equal :in_memory, Message.queue.adapter
   end
+  
+  def test_reset_adapter
+    Message.queue.adapters[:new_adapter] = NewQueue
+    Message.queue.adapter = :new_adapter
+    Message.queue.adapter = nil
+    assert_equal :in_memory, Message.queue.adapter
+  end
 
   def enq_filter(prepend, log=[])
     lambda do |filter, job, action|
