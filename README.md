@@ -50,6 +50,14 @@ Add a rake task for start worker process
       end
     end
 
+To monitor worker thread events:
+
+   Message.worker.callbacks[:start] << lambda {|job_name, options| "start event with options" }
+   Message.worker.callbacks[:crash] << lambda {|job_name, e| "crash event with error" }
+   Message.worker.callbacks[:stop] << lambda {|job_name| "stop event" }
+
+By default, there are event log callbacks installed.
+
 ### Queuing jobs
 
 
@@ -96,4 +104,3 @@ For some environment or queue system (e.g. AWS SQS), you will need set an applic
 By change queue adapter:
 
     Message.queue.adapter = :sqs
-
