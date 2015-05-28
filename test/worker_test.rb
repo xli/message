@@ -68,11 +68,13 @@ class WorkerTest < Test::Unit::TestCase
 
   def test_start_worker_thread
     t = Message.worker.start(size: 1, interval: 0.01, delay: 0)
-    Task.async.plus(3)
-    sleep 0.1
-    assert_equal 4, Task.count
-  ensure
-    t.kill
+    begin
+      Task.async.plus(3)
+      sleep 0.1
+      assert_equal 4, Task.count
+    ensure
+      t.kill
+    end
   end
 
   def test_enq_and_process_different_job
@@ -102,5 +104,20 @@ class WorkerTest < Test::Unit::TestCase
     Message.worker.sync = true
     Task.async.plus(3)
     assert_equal 4, Task.count
+  end
+
+  def test_worker_callbacks
+    Message.logger.level = Logger::UNKNOWN
+    log = []
+    Message.worker.callbacks[:start] << lambda {|job_name, options| log << "Worker[#{job_name}] starts with #{options.inspect}"}
+    Message.worker.callbacks[:crash] << lambda {|job_name, e| log << "Worker[#{job_name}] crashed by error #{e.message}"}
+    Message.worker.callbacks[:stop] << lambda {|job_name| log << "Worker[#{job_name}] stopped"}
+
+    Message.worker.default.work_in_thread(size: 1, interval: 0.01, delay: 0) do |size|
+      raise "unexpected error"
+    end
+    assert_equal ["Worker[message-worker-default] starts with {:size=>1, :interval=>0.01, :delay=>0}",
+                  "Worker[message-worker-default] crashed by error unexpected error",
+                  "Worker[message-worker-default] stopped"], log
   end
 end

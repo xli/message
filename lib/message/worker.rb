@@ -52,12 +52,20 @@ module Message
         @jobs ||= RUBY_PLATFORM =~ /java/ ? java.util.concurrent.ConcurrentHashMap.new : {}
       end
 
+      def callbacks
+        @callbacks ||= {:start => [], :crash => [], :stop => []}
+      end
+
       def reset
         @default_job = nil
         @sync = nil
         @jobs = nil
       end
     end
+
+    callbacks[:start] << lambda {|job_name, options| Message.log(:info) { "[Worker] start in #{delay}" } }
+    callbacks[:crash] << lambda {|job_name, e| Message.log(:error) { "[Worker] crashed: #{e.message}\n#{e.backtrace.join("\n")}"} }
+    callbacks[:stop] << lambda {|job_name| Message.log(:info) { "[Worker] stopped" } }
 
     attr_reader :job_name
 
@@ -66,22 +74,28 @@ module Message
     end
 
     def start(options={})
+      Thread.start do
+        self.work_in_thread(options) do |size|
+          process(size)
+        end
+      end
+    end
+
+    def work_in_thread(options, &block)
       size = options[:size] || DEFAULT_PROCESS_SIZE
       interval = options[:interval] || DEFAULT_PROCESS_INTERVAL
       delay = options[:delay] || 10 + rand(20)
-      Thread.start do
-        begin
-          Message.log(:info) { "[Worker] start in #{delay}" }
-          sleep delay
-          loop do
-            process(size)
-            sleep interval
-          end
-        rescue => e
-          Message.log(:error) { "[Worker] crashed: #{e.message}\n#{e.backtrace.join("\n")}"}
-        ensure
-          Message.log(:info) { "[Worker] stopped" }
+      begin
+        callback(:start, options)
+        sleep delay if delay > 0
+        loop do
+          yield(size)
+          sleep interval
         end
+      rescue => e
+        callback(:crash, e)
+      ensure
+        callback(:stop)
       end
     end
 
@@ -99,6 +113,12 @@ module Message
     alias :<< :enq
 
     private
+    def callback(name, *args)
+      self.class.callbacks[name].each do |c|
+        c.call(job_name, *args)
+      end
+    end
+
     def job
       self.class.jobs[@job_name] ||= Message.job(@job_name, &job_processor)
     end
